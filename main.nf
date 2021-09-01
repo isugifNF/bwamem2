@@ -1,23 +1,9 @@
-# bwamem2
+#! /usr/bin/env nextflow
 
-```
-git clone https://github.com/isugifNF/bwamem2.git
-cd bwamem2
-nextflow run main.nf --help
-```
+nextflow.enable.dsl=2
 
-or 
-
-```
-nextflow run isugifNF/bwamem2 -r main --help
-```
-
-
-
-```
-N E X T F L O W  ~  version 21.04.3
-Launching `main.nf` [voluminous_hodgkin] - revision: 5d7eca7c21
-
+def helpMsg() {
+  log.info """
    Usage:
    The typical command for running the pipeline is as follows:
    nextflow run main.nf --reference GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
@@ -38,4 +24,58 @@ Launching `main.nf` [voluminous_hodgkin] - revision: 5d7eca7c21
     --queueSize             Maximum jobs to submit to slurm [default:20]
     --account               HPC account name for slurm sbatch, atlas and ceres requires this
     --help
-```
+"""
+}
+
+if(params.help){
+  helpMsg()
+  exit 0
+}
+
+process bwamem2_index {
+  tag "${genome_fasta.simpleName}"
+  label 'bwamem'
+  publishDir "${params.outdir}"
+
+  input:
+  path(genome_fasta)
+
+  output: // [genome.fasta, [genome_index files]]
+  tuple path("$genome_fasta"), path("${genome_fasta}*")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  $bwamem2_app index $genome_fasta
+  """
+}
+
+process bwamem2_mem {
+  tag "$readname"
+  label 'bwamem'
+  publishDir "${params.outdir}"
+
+  input:
+  tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
+
+  output: // reads_mapped_2_genome.bam
+  path("${readname}_mapped.bam")
+
+  script:
+  """
+  #! /usr/bin/env bash
+  PROC1=\$((`nproc` * 3/4))
+  $bwamem2_app mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
+     $samtools_app view --threads 1 -bS - > ${readname}_mapped.bam
+  """
+}
+
+workflow {
+    /* Input channels */
+    genome_ch = channel.fromPath(params.genome, checkIfExists:true)
+    reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
+
+    /* main method */
+    genome_ch | bwamem2_index | combine(reads_ch) | bwamem2_mem
+}
+
