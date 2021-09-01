@@ -20,7 +20,7 @@ Launching `main.nf` [voluminous_hodgkin] - revision: 5d7eca7c21
 
    Usage:
    The typical command for running the pipeline is as follows:
-   nextflow run main.nf --reference GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
+   nextflow run main.nf --genome GENOME.fasta --reads "*_{R1,R2}.fastq.gz" -profile singularity
    Mandatory arguments:
     --genome                Genome fasta file, against which reads will be mapped to find SNPs
     --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
