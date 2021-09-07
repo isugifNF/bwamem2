@@ -64,11 +64,14 @@ process bwamem2_mem {
   script:
   """
   #! /usr/bin/env bash
-  PROC1=\$((`nproc` * 3/4))
-  $bwamem2_app mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
-     $samtools_app view --threads 1 -bS - > ${readname}_mapped.bam
+  PROC1=\$(((`nproc`-1) * 3/4 + 1))
+  PROC2=\$(((`nproc`-1) * 1/4 + 1))
+  mkdir tmp
+  ${bwamem2_app} mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
+     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readname}_mapped.bam
   """
 }
+// samtools view --threads 1 -bS -
 
 workflow {
     /* Input channels */
