@@ -60,7 +60,7 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("${readpairs.get(0).simpleName()}_mapped.bam")
+  path("${readpairs.get(0).simpleName}_mapped.bam")
 
   script:
   """
@@ -69,7 +69,7 @@ process bwamem2_mem {
   PROC2=\$(((`nproc`-1) * 1/4 + 1))
   mkdir tmp
   ${bwamem2_app} mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
-     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readpairs.get(0).simpleName()}_mapped.bam
+     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readpairs.get(0).simpleName}_mapped.bam
   """
 }
 // samtools view --threads 1 -bS -
