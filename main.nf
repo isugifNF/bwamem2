@@ -19,6 +19,7 @@ def helpMsg() {
     --bwamem2_app           Link to bwamem2 executable [default: 'bwa-mem2']
     --samtools_app          Link to samtools executable [default: 'samtools']
    Optional other arguments:
+    --splitby               Number of sequence in each split of fastq.gz
     --threads               Threads per process [default:4 for local, 16 for slurm]
     --window                Window size passed to bedtools for gatk [default:100000]
     --queueSize             Maximum jobs to submit to slurm [default:20]
@@ -59,7 +60,7 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("${readname}_mapped.bam")
+  path("${readpairs.get(0).simpleName()}_mapped.bam")
 
   script:
   """
@@ -68,7 +69,7 @@ process bwamem2_mem {
   PROC2=\$(((`nproc`-1) * 1/4 + 1))
   mkdir tmp
   ${bwamem2_app} mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
-     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readname}_mapped.bam
+     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readpairs.get(0).simpleName()}_mapped.bam
   """
 }
 // samtools view --threads 1 -bS -
@@ -76,8 +77,14 @@ process bwamem2_mem {
 workflow {
     /* Input channels */
     genome_ch = channel.fromPath(params.genome, checkIfExists:true)
-    reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
-
+    if(params.splitby) {
+      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true, flat:true)
+        | splitFastq(by:"$params.splitby", compress:true, file:true, pe:true)
+        | map { n -> [n.get(0), [n.get(1), n.get(2)] ] }
+    } else {
+      reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
+    }
+    
     /* main method */
     genome_ch | bwamem2_index | combine(reads_ch) | bwamem2_mem
 }
