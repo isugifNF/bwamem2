@@ -60,7 +60,7 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("${readpairs.getAt(0).simpleName}_mapped.bam")
+  path("${readpairs.simpleName}_mapped.bam")
 
   script:
   """
