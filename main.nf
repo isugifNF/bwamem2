@@ -10,7 +10,6 @@ def helpMsg() {
    Mandatory arguments:
     --genome                Genome fasta file, against which reads will be mapped to find SNPs
     --reads                 Paired-end reads in fastq.gz format, will need to specify glob (e.g. "*_{R1,R2}.fastq.gz")
-
    Optional configuration arguments:
     -profile                Configuration profile to use. Can use multiple (comma separated)
                             Available: local, slurm, singularity, docker [default:local]
@@ -60,17 +59,16 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("*_mapped.bam")
-//  path("${readpairs.simpleName}_mapped.bam")
+  path("${readpairs.getAt(0).simpleName}_mapped.bam")
 
   script:
   """
   #! /usr/bin/env bash
- 
-  #PROC1=\$(((`nproc`-1) * 3/4 + 1))
-  #PROC2=\$(((`nproc`-1) * 1/4 + 1))
+  PROC1=\$(((`nproc`-1) * 3/4 + 1))
+  PROC2=\$(((`nproc`-1) * 1/4 + 1))
   mkdir tmp
-  ${bwamem2_app} mem -t 30 ${genome_fasta} ${readpairs} | ${samtools_app} sort -T tmp -m 8G --threads 6 - > ${readpairs.simpleName}_mapped.bam
+  ${bwamem2_app} mem -t \${PROC1} ${genome_fasta} ${readpairs} |\
+     ${samtools_app} sort -T tmp -m 8G --threads \$PROC2 - > ${readpairs.getAt(0).simpleName}_mapped.bam
   """
 }
 // samtools view --threads 1 -bS -
@@ -87,6 +85,5 @@ workflow {
     }
     
     /* main method */
-	genome_ch | bwamem2_index | combine(reads_ch) | bwamem2_mem
+    genome_ch | bwamem2_index | combine(reads_ch) | bwamem2_mem
 }
-
