@@ -87,6 +87,7 @@ workflow {
     }
     
     /* main method */
-    genome_ch | bwamem2_index | combine(reads_ch) | bwamem2_mem
+	genome_ch | bwamem2_index 
+	genome_ch | combine(bwamem2_index.out) | combine(reads_ch) | bwamem2_mem
 }
 
