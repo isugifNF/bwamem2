@@ -60,7 +60,7 @@ process bwamem2_mem {
   tuple path(genome_fasta), path(genome_index), val(readname), path(readpairs)
 
   output: // reads_mapped_2_genome.bam
-  path("${readpairs.get(0).simpleName}_mapped.bam")
+  path("${readpairs.getAt(0).simpleName}_mapped.bam")
 
   script:
   """
@@ -80,7 +80,7 @@ workflow {
     if(params.splitby) {
       reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true, flat:true)
         | splitFastq(by:"$params.splitby", compress:true, file:true, pe:true)
-        | map { n -> [n.get(0), [n.get(1), n.get(2)] ] }
+        | map { n -> [n.getAt(0), [n.getAt(1), n.getAt(2)] ] }
     } else {
       reads_ch = channel.fromFilePairs(params.reads, checkIfExists:true)
     }
