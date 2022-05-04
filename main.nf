@@ -69,7 +69,7 @@ process bwamem2_mem {
   #PROC1=\$(((`nproc`-1) * 3/4 + 1))
   #PROC2=\$(((`nproc`-1) * 1/4 + 1))
   mkdir tmp
-  ${bwamem2_app} mem -t 30 ${genome_fasta} ${readpairs} | ${samtools_app} sort -T tmp -m 8G --threads 6 - > ${readpairs.get(0).simpleName}_mapped.bam
+  ${bwamem2_app} mem -t 30 ${genome_fasta} ${readpairs} | ${samtools_app} sort -T tmp -m 8G --threads 6 - > ${readpairs.getAt(0).simpleName}_mapped.bam
   """
 }
 // samtools view --threads 1 -bS -
